@@ -282,7 +282,7 @@ import { cleanWebp } from './webp-clean.js';
     if (!fileList || !fileList.length) return;
     for (const file of fileList) {
       if (!isSupported(file)) continue;
-      const item = { id: nextId++, file, name: uniqueDcimName(), status: 'pending', el: document.createElement('li') };
+      const item = { id: nextId++, file, status: 'pending', el: document.createElement('li') };
       item.el.className = 'item';
       items.push(item);
       list.appendChild(item.el);
@@ -354,7 +354,7 @@ import { cleanWebp } from './webp-clean.js';
   const p2 = (n, l = 2) => String(n).padStart(l, '0');
   const dcimName = (d = new Date()) =>
     `DCIM_${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}${p2(d.getMilliseconds(), 3)}.webp`;
-  // Assigned when the file is added; files added in the same millisecond get +1 ms each so names never clash
+  // Generated at save time; two saves in the same millisecond get +1 ms so names never clash
   let lastStamp = 0;
   const uniqueDcimName = () => {
     lastStamp = Math.max(Date.now(), lastStamp + 1);
@@ -363,7 +363,7 @@ import { cleanWebp } from './webp-clean.js';
   const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   function render(item) {
-    const name = esc(item.name);
+    const name = `Immagine ${item.id}`;
     if (item.status === 'done') {
       const pct = Math.round((1 - item.blob.size / item.file.size) * 100);
       item.el.innerHTML = `
@@ -374,7 +374,7 @@ import { cleanWebp } from './webp-clean.js';
     } else if (item.status === 'error') {
       item.el.innerHTML = `
         <div class="thumb"></div>
-        <div class="meta"><div class="name">${esc(item.file.name)}</div><div class="info error">${esc(item.err)}</div></div>
+        <div class="meta"><div class="name">Immagine ${item.id}</div><div class="info error">${esc(item.err)}</div></div>
         <div class="item-actions"><button type="button" data-a="rm" aria-label="Rimuovi">✕</button></div>`;
     } else {
       item.el.innerHTML = `
@@ -387,7 +387,7 @@ import { cleanWebp } from './webp-clean.js';
   list.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
     const item = items.find((i) => i.el.contains(b)); if (!item) return;
-    if (b.dataset.a === 'dl') download(item.blob, item.name);
+    if (b.dataset.a === 'dl') download(item.blob, uniqueDcimName());
     if (b.dataset.a === 'rm') remove(item);
   });
 
@@ -413,11 +413,11 @@ import { cleanWebp } from './webp-clean.js';
       : `${done.length} foto · ${fmt(a)} → ${fmt(b)}` + (a ? ` (−${Math.round((1 - b / a) * 100)}%)` : '');
   }
 
-  btnClear.addEventListener('click', () => { generation++; [...items].forEach(remove); });
+  btnClear.addEventListener('click', () => { generation++; [...items].forEach(remove); nextId = 1; });
 
   btnZip.addEventListener('click', async () => {
     const done = items.filter((i) => i.status === 'done');
-    if (done.length === 1) return download(done[0].blob, done[0].name);
+    if (done.length === 1) return download(done[0].blob, uniqueDcimName());
     const zip = await makeZip(done.map((i) => ({ name: outName(i.file.name), blob: i.blob })));
     download(zip, `webp-${new Date().toISOString().slice(0, 10)}.zip`);
   });
