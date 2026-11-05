@@ -350,6 +350,10 @@ import { cleanWebp } from './webp-clean.js';
   // ---- rendering ----
   const fmt = (n) => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(0) + ' KB' : (n / 1048576).toFixed(2).replace('.', ',') + ' MB';
   const outName = (name) => name.replace(/\.(jpe?g|png)$/i, '') + '.webp';
+  // Single-file save name: DCIM_YYYYMMDD-HHMMSSmmm.webp, local time at the moment of saving
+  const p2 = (n, l = 2) => String(n).padStart(l, '0');
+  const dcimName = (d = new Date()) =>
+    `DCIM_${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}${p2(d.getMilliseconds(), 3)}.webp`;
   const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   function render(item) {
@@ -377,7 +381,7 @@ import { cleanWebp } from './webp-clean.js';
   list.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
     const item = items.find((i) => i.el.contains(b)); if (!item) return;
-    if (b.dataset.a === 'dl') download(item.blob, outName(item.file.name));
+    if (b.dataset.a === 'dl') download(item.blob, dcimName());
     if (b.dataset.a === 'rm') remove(item);
   });
 
@@ -407,7 +411,7 @@ import { cleanWebp } from './webp-clean.js';
 
   btnZip.addEventListener('click', async () => {
     const done = items.filter((i) => i.status === 'done');
-    if (done.length === 1) return download(done[0].blob, outName(done[0].file.name));
+    if (done.length === 1) return download(done[0].blob, dcimName());
     const zip = await makeZip(done.map((i) => ({ name: outName(i.file.name), blob: i.blob })));
     download(zip, `webp-${new Date().toISOString().slice(0, 10)}.zip`);
   });
