@@ -349,7 +349,6 @@ import { cleanWebp } from './webp-clean.js';
 
   // ---- rendering ----
   const fmt = (n) => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(0) + ' KB' : (n / 1048576).toFixed(2).replace('.', ',') + ' MB';
-  const outName = (name) => name.replace(/\.(jpe?g|png)$/i, '') + '.webp';
   // Single-file save name: DCIM_YYYYMMDD-HHMMSSmmm.webp, local time at the moment of saving
   const p2 = (n, l = 2) => String(n).padStart(l, '0');
   const dcimName = (d = new Date()) =>
@@ -418,7 +417,7 @@ import { cleanWebp } from './webp-clean.js';
   btnZip.addEventListener('click', async () => {
     const done = items.filter((i) => i.status === 'done');
     if (done.length === 1) return download(done[0].blob, uniqueDcimName());
-    const zip = await makeZip(done.map((i) => ({ name: outName(i.file.name), blob: i.blob })));
+    const zip = await makeZip(done.map((i) => ({ name: uniqueDcimName(), blob: i.blob })));
     download(zip, `webp-${new Date().toISOString().slice(0, 10)}.zip`);
   });
 
@@ -426,7 +425,7 @@ import { cleanWebp } from './webp-clean.js';
   if (navigator.canShare && navigator.canShare({ files: [new File([''], 'x.webp', { type: 'image/webp' })] })) {
     btnShare.hidden = false;
     btnShare.addEventListener('click', async () => {
-      const files = items.filter((i) => i.status === 'done').map((i) => new File([i.blob], outName(i.file.name), { type: 'image/webp' }));
+      const files = items.filter((i) => i.status === 'done').map((i) => new File([i.blob], uniqueDcimName(), { type: 'image/webp' }));
       try { await navigator.share({ files }); } catch (_) {}
     });
   }
